@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->enum('role', ['admin', 'member'])
-                ->default('user')
+                ->default('member')
                 ->after('password');
 
             $table->string('profile_image')
