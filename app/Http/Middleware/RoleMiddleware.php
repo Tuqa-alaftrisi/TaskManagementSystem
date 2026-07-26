@@ -14,11 +14,17 @@ class RoleMiddleware
         ...$roles
     ): Response {
         if (!$request->user()) {
-            return redirect()->route('login');
+            return response()->json([
+                'success' => false,
+                'message' => 'يجب تسجيل الدخول أولًا.',
+            ], 401);
         }
 
         if (!in_array($request->user()->role, $roles, true)) {
-            abort(403, 'ليس لديك صلاحية للوصول إلى هذه الصفحة.');
+            return response()->json([
+                'success' => false,
+                'message' => 'ليس لديك صلاحية لتنفيذ هذه العملية.',
+            ], 403);
         }
 
         return $next($request);

@@ -67,4 +67,18 @@ class User extends Authenticatable
     {
         return $this->role === 'member';
     }
+    public function teams()
+    {
+    return $this->belongsToMany(
+        Team::class,
+        'team_memberships',
+        'user_id',
+        'team_id'
+    )->withPivot([
+        'status',
+        'points_earned',
+        'joined_at',
+    ])->withTimestamps();
+    }
+
 }
