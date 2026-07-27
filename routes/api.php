@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\TeamController;
+use App\Http\Controllers\Api\TeamManagementController;
 use App\Http\Controllers\Api\TeamMembershipController;
 use Illuminate\Support\Facades\Route;
 
@@ -196,11 +197,43 @@ Route::middleware('auth:sanctum')->group(function () {
             'update',
         ]);
 
-
         // حذف مشروع
         Route::delete('/teams/{team}/projects/{project}', [
             ProjectController::class,
             'destroy',
+        ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Team Management Routes (جديدة)
+        |--------------------------------------------------------------------------
+        |
+        | إضافة عضو مباشرة، مراجعة طلبات الانضمام، البحث عن مستخدمين، إرسال دعوات.
+        |
+        */
+
+        // إضافة عضو مباشرة إلى الفريق
+        Route::post('/teams/{team}/members', [
+            TeamManagementController::class,
+            'addMember',
+        ]);
+
+        // مراجعة طلب انضمام (قبول أو رفض)
+        Route::patch('/teams/{team}/join-requests/{joinRequest}', [
+            TeamManagementController::class,
+            'reviewJoinRequest',
+        ]);
+
+        // البحث عن مستخدمين لإرسال دعوة لهم
+        Route::get('/teams/{team}/users/search', [
+            TeamManagementController::class,
+            'searchUsers',
+        ]);
+
+        // إرسال دعوة انضمام إلى مستخدم
+        Route::post('/teams/{team}/invitations', [
+            TeamManagementController::class,
+            'sendInvitation',
         ]);
     });
 });
