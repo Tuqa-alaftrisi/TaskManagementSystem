@@ -66,8 +66,10 @@ class Task extends Model
 
     public function steps()
     {
-        return $this->hasMany(TaskStep::class, 'step_id');
+        return $this->hasMany(TaskStep::class, 'task_id', 'task_id');
     }
+
+
 
     public function completions()
     {
@@ -203,12 +205,64 @@ class Task extends Model
         return round(($completedSteps / $totalSteps) * 100);
     }
 
+    public function updateStatusFromProgress(): void
+    {
+        // إذا كانت المهمة ملغاة، لا نغير حالتها تلقائيًا
+        if ($this->isCancelled()) {
+            return;
+        }
+
+        $totalSteps = $this->steps()->count();
+
+        // لا توجد خطوات
+        if ($totalSteps === 0) {
+            $this->update([
+                'status' => self::STATUS_PENDING,
+            ]);
+
+            return;
+        }
+
+        // عدد الخطوات المكتملة
+        $completedSteps = $this->steps()
+            ->whereHas('completions', function ($query) {
+                $query->where('is_completed', true);
+            })
+            ->count();
+
+        // كل الخطوات مكتملة
+        if ($completedSteps === $totalSteps) {
+
+            $this->update([
+                'status' => self::STATUS_COMPLETED,
+            ]);
+
+            return;
+        }
+
+        // يوجد تقدم ولكن لم تكتمل كل الخطوات
+        if ($completedSteps > 0) {
+
+            $this->update([
+                'status' => self::STATUS_IN_PROGRESS,
+            ]);
+
+            return;
+        }
+
+        // لا توجد أي خطوة مكتملة
+        $this->update([
+            'status' => self::STATUS_PENDING,
+        ]);
+    }
+
     public function getStatusLabel(): string
     {
         $labels = [
             self::STATUS_PENDING => 'قيد الانتظار',
             self::STATUS_IN_PROGRESS => 'قيد التنفيذ',
             self::STATUS_COMPLETED => 'مكتملة',
+
             self::STATUS_CANCELLED => 'ملغاة',
         ];
 

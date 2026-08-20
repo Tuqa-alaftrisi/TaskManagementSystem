@@ -8,29 +8,31 @@ use Illuminate\Database\Eloquent\Model;
 class TaskStep extends Model
 {
     use HasFactory;
-       protected $primaryKey = 'step_id';
-          protected $keyType = 'int';
-             public $incrementing = true;
+    protected $primaryKey = 'step_id';
+    protected $keyType = 'int';
+    public $incrementing = true;
 
     protected $fillable = [
         'task_id',
         'step_description',
         'step_order',
+        'points',
     ];
 
-     protected $casts = [
+    protected $casts = [
+        'points' => 'integer',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
 
     public function task()
     {
-        return $this->belongsTo(Task::class,'task_id');
+        return $this->belongsTo(Task::class, 'task_id');
     }
 
     public function completions()
     {
-        return $this->hasMany(StepCompletion::class,'step_id');
+        return $this->hasMany(StepCompletion::class, 'step_id');
     }
 
 
@@ -105,5 +107,4 @@ class TaskStep extends Model
     {
         return $this->getPreviousStep() !== null;
     }
-
 }

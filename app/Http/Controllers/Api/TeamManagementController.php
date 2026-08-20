@@ -8,6 +8,7 @@ use App\Models\Team;
 use App\Models\TeamInvitation;
 use App\Models\TeamMembership;
 use App\Models\User;
+use App\Models\Notification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -74,6 +75,18 @@ class TeamManagementController extends Controller
         ]);
 
         $membership->load('user:id,name,email,role,profile_image');
+
+        Notification::createNotification(
+            $user->id,
+            "You have been added to the team {$team->name}.",
+            Notification::TYPE_ACCEPTED,
+            'Added to Team',
+            '/teams/' . $team->id,
+            [
+                'team_id' => $team->id,
+                'added_by' => $request->user()->id,
+            ]
+        );
 
         return response()->json([
             'success' => true,
@@ -163,6 +176,36 @@ class TeamManagementController extends Controller
             }
         });
 
+        if ($validated['status'] === 'approved') {
+
+            Notification::createNotification(
+                $joinRequest->user_id,
+                "Your request to join {$team->name} has been approved.",
+                Notification::TYPE_ACCEPTED,
+                'Join Request Approved',
+                '/teams/' . $team->id,
+                [
+                    'team_id' => $team->id,
+                    'join_request_id' => $joinRequest->id,
+                    'reviewed_by' => $request->user()->id,
+                ]
+            );
+        } else {
+
+            Notification::createNotification(
+                $joinRequest->user_id,
+                "Your request to join {$team->name} has been rejected.",
+                Notification::TYPE_REJECTED,
+                'Join Request Rejected',
+                '/teams/' . $team->id,
+                [
+                    'team_id' => $team->id,
+                    'join_request_id' => $joinRequest->id,
+                    'reviewed_by' => $request->user()->id,
+                ]
+            );
+        }
+
         $message = $validated['status'] === 'approved'
             ? 'تم قبول الطلب وإضافة المستخدم إلى الفريق.'
             : 'تم رفض طلب الانضمام.';
@@ -195,12 +238,12 @@ class TeamManagementController extends Controller
         // البحث عن المستخدمين
         $users = User::where(function ($q) use ($query) {
             $q->where('name', 'like', "%{$query}%")
-              ->orWhere('email', 'like', "%{$query}%");
+                ->orWhere('email', 'like', "%{$query}%");
         })
-        ->where('id', '!=', $request->user()->id) // استبعاد المدير نفسه
-        ->select(['id', 'name', 'email', 'role', 'profile_image'])
-        ->limit(20)
-        ->get();
+            ->where('id', '!=', $request->user()->id) // استبعاد المدير نفسه
+            ->select(['id', 'name', 'email', 'role', 'profile_image'])
+            ->limit(20)
+            ->get();
 
         // تحديد علاقة كل مستخدم بالفريق
         $result = $users->map(function ($user) use ($team) {
@@ -305,6 +348,19 @@ class TeamManagementController extends Controller
             'invited_by' => $request->user()->id,
             'status' => 'pending',
         ]);
+
+        Notification::createNotification(
+            $userId,
+            "You have been invited to join the team {$team->name}.",
+            Notification::TYPE_INVITE,
+            'Team Invitation',
+            '/teams/' . $team->id,
+            [
+                'team_id' => $team->id,
+                'invitation_id' => $invitation->id,
+                'invited_by' => $request->user()->id,
+            ]
+        );
 
         $invitation->load('invitedUser:id,name,email');
 

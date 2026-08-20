@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('notifications', function (Blueprint $table) {
-            $table->unsignedBigInteger('notification_id')->primary();
+            $table->unsignedBigInteger('notification_id')->autoIncrement();
 
             $table->foreignId('user_id')
                 ->constrained('users')
@@ -23,7 +23,17 @@ return new class extends Migration
 
             $table->text('message');
 
-            $table->enum('type', ['join_request', 'accepted', 'rejected', 'invite', 'points']);
+            $table->enum('type', [
+                'join_request',
+                'accepted',
+                'rejected',
+                'invite',
+                'task_assigned',
+                'task_status_changed',
+                'deadline_approaching',
+                'points',
+                'task_cancelled',
+            ]);
 
             $table->boolean('is_read')->default(false);
 
@@ -33,7 +43,8 @@ return new class extends Migration
             $table->json('data')->nullable(); // بيانات إضافية (JSON)
 
             $table->dateTime('created_at');
-            
+
+            $table->timestamp('updated_at')->nullable();
         });
     }
 

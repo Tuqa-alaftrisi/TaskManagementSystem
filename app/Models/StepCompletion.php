@@ -14,18 +14,27 @@ class StepCompletion extends Model
         'user_id',
         'is_completed',
         'completed_at',
+        'points_earned',
     ];
 
-     protected $casts = [
+    protected $casts = [
         'is_completed' => 'boolean',
         'completed_at' => 'datetime',
+        'points_earned' => 'integer',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
 
-     protected $attributes = [
+    protected $attributes = [
         'is_completed' => false,
+        'points_earned' => 0,
     ];
+
+    /*
+    |--------------------------------------------------------------------------
+    | Relationships
+    |--------------------------------------------------------------------------
+    */
 
     public function step()
     {
@@ -34,8 +43,14 @@ class StepCompletion extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class,'user_id');
+        return $this->belongsTo(User::class, 'user_id');
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Scopes
+    |--------------------------------------------------------------------------
+    */
 
     public function scopeCompleted($query)
     {
@@ -57,11 +72,18 @@ class StepCompletion extends Model
         return $query->where('step_id', $stepId);
     }
 
-    public function markAsCompleted(): void
+    /*
+    |--------------------------------------------------------------------------
+    | Completion Methods
+    |--------------------------------------------------------------------------
+    */
+
+    public function markAsCompleted(int $points): void
     {
         $this->update([
             'is_completed' => true,
             'completed_at' => now(),
+            'points_earned' => $points,
         ]);
     }
 
@@ -70,6 +92,7 @@ class StepCompletion extends Model
         $this->update([
             'is_completed' => false,
             'completed_at' => null,
+            'points_earned' => 0,
         ]);
     }
 
@@ -78,14 +101,11 @@ class StepCompletion extends Model
         return $this->is_completed;
     }
 
-    public static function completeStep(int $stepId, int $userId): self
-    {
-        // استخدام firstOrCreate مع unique constraint
-        return self::firstOrCreate(
-            ['step_id' => $stepId, 'user_id' => $userId],
-            ['is_completed' => true, 'completed_at' => now()]
-        );
-    }
+    /*
+    |--------------------------------------------------------------------------
+    | Helper Methods
+    |--------------------------------------------------------------------------
+    */
 
     public function getCompletedAtFormatted(): ?string
     {
@@ -96,5 +116,4 @@ class StepCompletion extends Model
     {
         return $this->completed_at?->diffForHumans();
     }
-
 }

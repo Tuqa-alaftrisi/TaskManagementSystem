@@ -16,7 +16,7 @@ return new class extends Migration
             $table->id();
 
             $table->foreignId('step_id')
-                ->constrained('task_steps','step_id')
+                ->constrained('task_steps', 'step_id')
                 ->cascadeOnDelete();
 
             $table->foreignId('user_id')
@@ -26,6 +26,9 @@ return new class extends Migration
             $table->boolean('is_completed')->default(false);
 
             $table->dateTime('completed_at')->nullable();
+
+            // النقاط التي حصل عليها المستخدم من هذه الخطوة
+            $table->unsignedInteger('points_earned')->default(0);
 
             // منع تكرار نفس المستخدم لنفس الخطوة
             $table->unique(['step_id', 'user_id']);

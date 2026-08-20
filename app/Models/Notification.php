@@ -65,6 +65,10 @@ class Notification extends Model
     const TYPE_REJECTED = 'rejected';
     const TYPE_INVITE = 'invite';
     const TYPE_POINTS = 'points';
+    const TYPE_TASK_ASSIGNED = 'task_assigned';
+    const TYPE_TASK_STATUS_CHANGED = 'task_status_changed';
+    const TYPE_DEADLINE_APPROACHING = 'deadline_approaching';
+    const TYPE_TASK_CANCELLED = 'task_cancelled';
 
     /**
      * الحصول على قائمة جميع الأنواع المتاحة
@@ -76,7 +80,11 @@ class Notification extends Model
             self::TYPE_ACCEPTED,
             self::TYPE_REJECTED,
             self::TYPE_INVITE,
+            self::TYPE_TASK_ASSIGNED,
+            self::TYPE_TASK_STATUS_CHANGED,
+            self::TYPE_DEADLINE_APPROACHING,
             self::TYPE_POINTS,
+            self::TYPE_TASK_CANCELLED,
         ];
     }
 
@@ -179,7 +187,11 @@ class Notification extends Model
             self::TYPE_ACCEPTED => 'تم القبول',
             self::TYPE_REJECTED => 'تم الرفض',
             self::TYPE_INVITE => 'دعوة',
+            self::TYPE_TASK_ASSIGNED => 'إسناد مهمة',
+            self::TYPE_TASK_STATUS_CHANGED => 'تغيير حالة المهمة',
+            self::TYPE_DEADLINE_APPROACHING => 'اقتراب الموعد النهائي',
             self::TYPE_POINTS => 'نقاط',
+            self::TYPE_TASK_CANCELLED => 'إلغاء مهمة',
         ];
 
         return $labels[$this->type] ?? $this->type;
@@ -189,11 +201,15 @@ class Notification extends Model
     public function getTypeColor(): string
     {
         $colors = [
-            self::TYPE_JOIN_REQUEST => 'warning',    // أصفر
-            self::TYPE_ACCEPTED => 'success',        // أخضر
-            self::TYPE_REJECTED => 'danger',         // أحمر
-            self::TYPE_INVITE => 'info',             // أزرق
-            self::TYPE_POINTS => 'primary',          // أزرق غامق
+            self::TYPE_JOIN_REQUEST => 'warning',             // أصفر
+            self::TYPE_ACCEPTED => 'success',                 // أخضر
+            self::TYPE_REJECTED => 'danger',                  // أحمر
+            self::TYPE_INVITE => 'info',                      // أزرق
+            self::TYPE_TASK_ASSIGNED => 'primary',            // أزرق غامق
+            self::TYPE_TASK_STATUS_CHANGED => 'info',         // أزرق
+            self::TYPE_DEADLINE_APPROACHING => 'warning',     // أصفر
+            self::TYPE_POINTS => 'success',                   // أخضر
+            self::TYPE_TASK_CANCELLED => 'danger',
         ];
 
         return $colors[$this->type] ?? 'secondary';
@@ -209,7 +225,12 @@ class Notification extends Model
             self::TYPE_ACCEPTED => 'fa-check-circle',
             self::TYPE_REJECTED => 'fa-times-circle',
             self::TYPE_INVITE => 'fa-envelope',
+            self::TYPE_TASK_ASSIGNED => 'fa-tasks',
+            self::TYPE_TASK_STATUS_CHANGED => 'fa-sync-alt',
+            self::TYPE_DEADLINE_APPROACHING => 'fa-clock',
             self::TYPE_POINTS => 'fa-star',
+
+            self::TYPE_TASK_CANCELLED => 'fa-ban',
         ];
 
         return $icons[$this->type] ?? 'fa-bell';

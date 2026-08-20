@@ -6,15 +6,12 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('task_steps', function (Blueprint $table) {
 
-            $table->unsignedBigInteger('step_id')->primary();
-            
+            $table->unsignedBigInteger('step_id')->autoIncrement();
+
             $table->foreignId('task_id')
                 ->constrained('tasks', 'task_id')
                 ->cascadeOnDelete();
@@ -22,13 +19,14 @@ return new class extends Migration
             $table->text('step_description');
 
             $table->integer('step_order');
+
+            // عدد النقاط التي يحصل عليها العضو عند إكمال الخطوة
+            $table->unsignedInteger('points')->default(0);
+
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('task_steps');
