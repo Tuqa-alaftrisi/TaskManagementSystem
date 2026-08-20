@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Notification;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class NotificationController extends Controller
@@ -11,106 +12,123 @@ class NotificationController extends Controller
     /**
      * عرض إشعارات المستخدم الحالي.
      */
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
         $user = $request->user();
 
         $notifications = Notification::where('user_id', $user->id)
-            ->orderBy('created_at', 'desc')
+            ->orderByDesc('created_at')
             ->get();
 
         return response()->json([
+            'success' => true,
             'message' => 'Notifications retrieved successfully.',
-            'notifications' => $notifications,
+            'data' => [
+                'notifications' => $notifications,
+            ],
         ], 200);
     }
-
 
     /**
      * عرض إشعار محدد.
      */
-    public function show(Request $request, Notification $notification)
-    {
+    public function show(
+        Request $request,
+        Notification $notification
+    ): JsonResponse {
         $user = $request->user();
 
-        // منع المستخدم من مشاهدة إشعار يخص مستخدماً آخر
         if ($notification->user_id !== $user->id) {
             return response()->json([
-                'message' => 'You do not have permission to view this notification.'
+                'success' => false,
+                'message' => 'You do not have permission to view this notification.',
+                'data' => null,
             ], 403);
         }
 
         return response()->json([
+            'success' => true,
             'message' => 'Notification retrieved successfully.',
-            'notification' => $notification,
+            'data' => [
+                'notification' => $notification,
+            ],
         ], 200);
     }
-
 
     /**
      * تحديد إشعار كمقروء.
      */
-    public function markAsRead(Request $request, Notification $notification)
-    {
+    public function markAsRead(
+        Request $request,
+        Notification $notification
+    ): JsonResponse {
         $user = $request->user();
 
-        // التأكد أن الإشعار يخص المستخدم الحالي
         if ($notification->user_id !== $user->id) {
             return response()->json([
-                'message' => 'You do not have permission to update this notification.'
+                'success' => false,
+                'message' => 'You do not have permission to update this notification.',
+                'data' => null,
             ], 403);
         }
 
         $notification->markAsRead();
 
         return response()->json([
+            'success' => true,
             'message' => 'Notification marked as read successfully.',
-            'notification' => $notification,
+            'data' => [
+                'notification' => $notification->fresh(),
+            ],
         ], 200);
     }
-
 
     /**
      * تحديد جميع إشعارات المستخدم كمقروءة.
      */
-    public function markAllAsRead(Request $request)
+    public function markAllAsRead(Request $request): JsonResponse
     {
         $user = $request->user();
 
         Notification::markAllAsRead($user->id);
 
         return response()->json([
+            'success' => true,
             'message' => 'All notifications marked as read successfully.',
+            'data' => null,
         ], 200);
     }
-
 
     /**
      * حذف إشعار.
      */
-    public function destroy(Request $request, Notification $notification)
-    {
+    public function destroy(
+        Request $request,
+        Notification $notification
+    ): JsonResponse {
         $user = $request->user();
 
-        // منع حذف إشعار يخص مستخدماً آخر
         if ($notification->user_id !== $user->id) {
             return response()->json([
-                'message' => 'You do not have permission to delete this notification.'
+                'success' => false,
+                'message' => 'You do not have permission to delete this notification.',
+                'data' => null,
             ], 403);
         }
 
         $notification->delete();
 
         return response()->json([
+            'success' => true,
             'message' => 'Notification deleted successfully.',
+            'data' => null,
         ], 200);
     }
-
 
     /**
      * إرجاع عدد الإشعارات غير المقروءة.
      */
-    public function unreadCount(Request $request)
+    public function unreadCount(Request $request): JsonResponse
     {
         $user = $request->user();
 
@@ -119,8 +137,11 @@ class NotificationController extends Controller
             ->count();
 
         return response()->json([
+            'success' => true,
             'message' => 'Unread notifications count retrieved successfully.',
-            'unread_count' => $count,
+            'data' => [
+                'unread_count' => $count,
+            ],
         ], 200);
     }
 }

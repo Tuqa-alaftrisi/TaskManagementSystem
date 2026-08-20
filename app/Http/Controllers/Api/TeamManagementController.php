@@ -17,7 +17,7 @@ use Illuminate\Validation\Rule;
 class TeamManagementController extends Controller
 {
     /**
-     * إضافة عضو إلى الفريق مباشرة (بدون كود انضمام).
+     * إضافة عضو إلى الفريق مباشرة.
      * متاح لمدير الفريق فقط.
      */
     public function addMember(Request $request, Team $team): JsonResponse
@@ -26,6 +26,7 @@ class TeamManagementController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'يمكن لمدير هذا الفريق فقط إضافة أعضاء.',
+                'data' => null,
             ], 403);
         }
 
@@ -59,8 +60,11 @@ class TeamManagementController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'هذا المستخدم عضو في الفريق بالفعل.',
+                'data' => null,
                 'errors' => [
-                    'email' => ['هذا المستخدم عضو في الفريق بالفعل.'],
+                    'email' => [
+                        'هذا المستخدم عضو في الفريق بالفعل.',
+                    ],
                 ],
             ], 409);
         }
@@ -74,7 +78,9 @@ class TeamManagementController extends Controller
             'joined_at' => now(),
         ]);
 
-        $membership->load('user:id,name,email,role,profile_image');
+        $membership->load(
+            'user:id,name,email,role,profile_image'
+        );
 
         Notification::createNotification(
             $user->id,
@@ -114,7 +120,7 @@ class TeamManagementController extends Controller
     }
 
     /**
-     * مراجعة طلب انضمام (قبول أو رفض).
+     * مراجعة طلب انضمام.
      * متاح لمدير الفريق فقط.
      */
     public function reviewJoinRequest(
@@ -126,6 +132,7 @@ class TeamManagementController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'يمكن لمدير هذا الفريق فقط مراجعة طلبات الانضمام.',
+                'data' => null,
             ], 403);
         }
 
@@ -133,6 +140,7 @@ class TeamManagementController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'طلب الانضمام غير موجود ضمن هذا الفريق.',
+                'data' => null,
             ], 404);
         }
 
@@ -140,6 +148,7 @@ class TeamManagementController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'تمت مراجعة هذا الطلب مسبقًا.',
+                'data' => null,
             ], 422);
         }
 
@@ -150,7 +159,12 @@ class TeamManagementController extends Controller
             ],
         ]);
 
-        DB::transaction(function () use ($joinRequest, $validated, $request, $team) {
+        DB::transaction(function () use (
+            $joinRequest,
+            $validated,
+            $request,
+            $team
+        ) {
             $joinRequest->update([
                 'status' => $validated['status'],
                 'reviewed_by' => $request->user()->id,
@@ -177,7 +191,6 @@ class TeamManagementController extends Controller
         });
 
         if ($validated['status'] === 'approved') {
-
             Notification::createNotification(
                 $joinRequest->user_id,
                 "Your request to join {$team->name} has been approved.",
@@ -191,7 +204,6 @@ class TeamManagementController extends Controller
                 ]
             );
         } else {
-
             Notification::createNotification(
                 $joinRequest->user_id,
                 "Your request to join {$team->name} has been rejected.",
@@ -213,6 +225,7 @@ class TeamManagementController extends Controller
         return response()->json([
             'success' => true,
             'message' => $message,
+            'data' => null,
         ]);
     }
 
@@ -226,6 +239,7 @@ class TeamManagementController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'يمكن لمدير هذا الفريق فقط البحث عن مستخدمين.',
+                'data' => null,
             ], 403);
         }
 
@@ -240,14 +254,23 @@ class TeamManagementController extends Controller
             $q->where('name', 'like', "%{$query}%")
                 ->orWhere('email', 'like', "%{$query}%");
         })
-            ->where('id', '!=', $request->user()->id) // استبعاد المدير نفسه
-            ->select(['id', 'name', 'email', 'role', 'profile_image'])
+            ->where('id', '!=', $request->user()->id)
+            ->select([
+                'id',
+                'name',
+                'email',
+                'role',
+                'profile_image',
+            ])
             ->limit(20)
             ->get();
 
         // تحديد علاقة كل مستخدم بالفريق
         $result = $users->map(function ($user) use ($team) {
-            $relation = $this->getUserTeamRelation($user->id, $team->id);
+            $relation = $this->getUserTeamRelation(
+                $user->id,
+                $team->id
+            );
 
             return [
                 'id' => $user->id,
@@ -263,6 +286,7 @@ class TeamManagementController extends Controller
 
         return response()->json([
             'success' => true,
+            'message' => 'تم البحث عن المستخدمين بنجاح.',
             'data' => [
                 'users' => $result,
             ],
@@ -273,12 +297,15 @@ class TeamManagementController extends Controller
      * إرسال دعوة انضمام إلى مستخدم.
      * متاح لمدير الفريق فقط.
      */
-    public function sendInvitation(Request $request, Team $team): JsonResponse
-    {
+    public function sendInvitation(
+        Request $request,
+        Team $team
+    ): JsonResponse {
         if ($team->admin_id !== $request->user()->id) {
             return response()->json([
                 'success' => false,
                 'message' => 'يمكن لمدير هذا الفريق فقط إرسال الدعوات.',
+                'data' => null,
             ], 403);
         }
 
@@ -301,8 +328,11 @@ class TeamManagementController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'هذا المستخدم عضو في الفريق بالفعل.',
+                'data' => null,
                 'errors' => [
-                    'search' => ['هذا المستخدم عضو في الفريق بالفعل.'],
+                    'search' => [
+                        'هذا المستخدم عضو في الفريق بالفعل.',
+                    ],
                 ],
             ], 409);
         }
@@ -318,8 +348,11 @@ class TeamManagementController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'تم إرسال دعوة معلقة لهذا المستخدم بالفعل.',
+                'data' => null,
                 'errors' => [
-                    'search' => ['تم إرسال دعوة معلقة لهذا المستخدم بالفعل.'],
+                    'search' => [
+                        'تم إرسال دعوة معلقة لهذا المستخدم بالفعل.',
+                    ],
                 ],
             ], 409);
         }
@@ -335,8 +368,11 @@ class TeamManagementController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'لدى المستخدم طلب انضمام معلق؛ يمكنك قبوله من قائمة الطلبات الواردة.',
+                'data' => null,
                 'errors' => [
-                    'search' => ['لدى المستخدم طلب انضمام معلق؛ يمكنك قبوله من قائمة الطلبات الواردة.'],
+                    'search' => [
+                        'لدى المستخدم طلب انضمام معلق؛ يمكنك قبوله من قائمة الطلبات الواردة.',
+                    ],
                 ],
             ], 409);
         }
@@ -383,8 +419,10 @@ class TeamManagementController extends Controller
     /**
      * تحديد علاقة المستخدم بالفريق.
      */
-    private function getUserTeamRelation(int $userId, int $teamId): string
-    {
+    private function getUserTeamRelation(
+        int $userId,
+        int $teamId
+    ): string {
         // هل هو عضو؟
         $membership = TeamMembership::where([
             'team_id' => $teamId,

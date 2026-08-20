@@ -15,46 +15,67 @@ class AuthController extends Controller
      * إنشاء حساب جديد.
      */
     public function register(Request $request): JsonResponse
-{
-    $validated = $request->validate([
-        'name' => ['required', 'string', 'max:255'],
-        'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-        'password' => ['required', 'string', 'min:6', 'confirmed'],
-        'role' => ['required', 'string', 'in:member,admin'], 
-        'profile_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-    ]);
+    {
+        $validated = $request->validate([
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+            ],
 
-    $profileImagePath = null;
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                'unique:users,email',
+            ],
 
-    if ($request->hasFile('profile_image')) {
-        $profileImagePath = $request
-            ->file('profile_image')
-            ->store('profile-images', 'public');
+            'password' => [
+                'required',
+                'string',
+                'min:6',
+                'confirmed',
+            ],
+
+            'profile_image' => [
+                'nullable',
+                'image',
+                'mimes:jpg,jpeg,png,webp',
+                'max:2048',
+            ],
+        ]);
+
+        $profileImagePath = null;
+
+        if ($request->hasFile('profile_image')) {
+            $profileImagePath = $request
+                ->file('profile_image')
+                ->store('profile-images', 'public');
+        }
+
+        $user = User::create([
+            'name' => $validated['name'],
+            'email' => strtolower($validated['email']),
+            'password' => Hash::make($validated['password']),
+            'role' => 'member',
+            'profile_image' => $profileImagePath,
+            'email_verified_at' => now(),
+        ]);
+
+        $token = $user
+            ->createToken('flutter-app')
+            ->plainTextToken;
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم إنشاء الحساب بنجاح.',
+            'data' => [
+                'user' => $this->formatUser($user),
+                'token' => $token,
+                'token_type' => 'Bearer',
+            ],
+        ], 201);
     }
-
-    $user = new User();
-
-    $user->name = $validated['name'];
-    $user->email = strtolower($validated['email']);
-    $user->password = Hash::make($validated['password']);
-    $user->role = $validated['role']; // يأخذ القيمة من المستخدم
-    $user->profile_image = $profileImagePath;
-    $user->email_verified_at = now();
-    $user->save();
-
-    $token = $user->createToken('flutter-app')->plainTextToken;
-
-    return response()->json([
-        'success' => true,
-        'message' => 'تم إنشاء الحساب بنجاح.',
-        'data' => [
-            'user' => $this->formatUser($user),
-            'token' => $token,
-            'token_type' => 'Bearer',
-        ],
-    ], 201);
-}
-
 
     /**
      * تسجيل الدخول.
@@ -84,7 +105,10 @@ class AuthController extends Controller
             strtolower($validated['email'])
         )->first();
 
-        if (!$user || !Hash::check($validated['password'], $user->password)) {
+        if (
+            !$user ||
+            !Hash::check($validated['password'], $user->password)
+        ) {
             throw ValidationException::withMessages([
                 'email' => [
                     'البريد الإلكتروني أو كلمة المرور غير صحيحة.',
@@ -94,7 +118,9 @@ class AuthController extends Controller
 
         $deviceName = $validated['device_name'] ?? 'flutter-app';
 
-        $token = $user->createToken($deviceName)->plainTextToken;
+        $token = $user
+            ->createToken($deviceName)
+            ->plainTextToken;
 
         return response()->json([
             'success' => true,
@@ -108,12 +134,13 @@ class AuthController extends Controller
     }
 
     /**
-     * معلومات المستخدم المسجل حاليًا.
+     * معلومات المستخدم الحالي.
      */
     public function me(Request $request): JsonResponse
     {
         return response()->json([
             'success' => true,
+            'message' => 'تم جلب بيانات المستخدم بنجاح.',
             'data' => [
                 'user' => $this->formatUser($request->user()),
             ],
@@ -125,11 +152,16 @@ class AuthController extends Controller
      */
     public function logout(Request $request): JsonResponse
     {
-        $request->user()->currentAccessToken()->delete();
+        $currentToken = $request->user()->currentAccessToken();
+
+        if ($currentToken) {
+            $currentToken->delete();
+        }
 
         return response()->json([
             'success' => true,
             'message' => 'تم تسجيل الخروج بنجاح.',
+            'data' => null,
         ]);
     }
 
@@ -143,9 +175,13 @@ class AuthController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'تم تسجيل الخروج من جميع الأجهزة.',
+            'data' => null,
         ]);
     }
 
+    /**
+     * تنسيق بيانات المستخدم.
+     */
     private function formatUser(User $user): array
     {
         return [

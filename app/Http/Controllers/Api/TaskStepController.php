@@ -35,7 +35,9 @@ class TaskStepController extends Controller
         // 3. التأكد أن المشروع والفريق موجودان
         if (!$project || !$team) {
             return response()->json([
-                'message' => 'The project or team related to this task was not found.'
+                'success' => false,
+                'message' => 'The project or team related to this task was not found.',
+                'data' => null,
             ], 404);
         }
 
@@ -48,7 +50,9 @@ class TaskStepController extends Controller
         // 6. السماح فقط للمدير أو المسؤول عن المهمة
         if (!$isAdmin && !$isAssignedUser) {
             return response()->json([
-                'message' => 'You do not have permission to view steps of this task.'
+                'success' => false,
+                'message' => 'You do not have permission to view steps of this task.',
+                'data' => null,
             ], 403);
         }
 
@@ -59,11 +63,13 @@ class TaskStepController extends Controller
 
         // 8. إرجاع الخطوات
         return response()->json([
+            'success' => true,
             'message' => 'Task steps retrieved successfully.',
-            'steps' => $steps
+            'data' => [
+                'steps' => $steps,
+            ],
         ], 200);
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -88,14 +94,18 @@ class TaskStepController extends Controller
         // 3. التأكد من وجود المشروع والفريق
         if (!$project || !$team) {
             return response()->json([
-                'message' => 'The project or team related to this task was not found.'
+                'success' => false,
+                'message' => 'The project or team related to this task was not found.',
+                'data' => null,
             ], 404);
         }
 
         // 4. التأكد أن المستخدم هو مدير الفريق
         if ($team->admin_id !== $user->id) {
             return response()->json([
-                'message' => 'Only the team admin can add steps to this task.'
+                'success' => false,
+                'message' => 'Only the team admin can add steps to this task.',
+                'data' => null,
             ], 403);
         }
 
@@ -104,34 +114,31 @@ class TaskStepController extends Controller
             'step_description' => [
                 'required',
                 'string',
-                'max:1000'
+                'max:1000',
             ],
 
             'step_order' => [
                 'nullable',
                 'integer',
-                'min:1'
+                'min:1',
             ],
 
             'points' => [
                 'required',
                 'integer',
-                'min:0'
+                'min:0',
             ],
         ]);
 
         // 6. إنشاء الخطوة داخل transaction
         $step = DB::transaction(function () use ($task, $validated) {
-
             $order = $validated['step_order'] ?? null;
 
             // إذا لم يتم تحديد ترتيب
             if (is_null($order)) {
-
                 $order = (int) $task->steps()
                     ->max('step_order') + 1;
             } else {
-
                 // إزاحة الخطوات التالية
                 $task->steps()
                     ->where('step_order', '>=', $order)
@@ -147,11 +154,13 @@ class TaskStepController extends Controller
 
         // 7. إرجاع الخطوة
         return response()->json([
+            'success' => true,
             'message' => 'Task step created successfully.',
-            'step' => $step
+            'data' => [
+                'step' => $step,
+            ],
         ], 201);
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -176,14 +185,18 @@ class TaskStepController extends Controller
         // 3. التأكد من وجود المهمة والفريق
         if (!$task || !$team) {
             return response()->json([
-                'message' => 'The task or team related to this step was not found.'
+                'success' => false,
+                'message' => 'The task or team related to this step was not found.',
+                'data' => null,
             ], 404);
         }
 
         // 4. المدير فقط
         if ($team->admin_id !== $user->id) {
             return response()->json([
-                'message' => 'Only the team admin can update this step.'
+                'success' => false,
+                'message' => 'Only the team admin can update this step.',
+                'data' => null,
             ], 403);
         }
 
@@ -192,13 +205,13 @@ class TaskStepController extends Controller
             'step_description' => [
                 'required',
                 'string',
-                'max:1000'
+                'max:1000',
             ],
 
             'points' => [
                 'required',
                 'integer',
-                'min:0'
+                'min:0',
             ],
         ]);
 
@@ -210,11 +223,13 @@ class TaskStepController extends Controller
 
         // 7. إرجاع الخطوة
         return response()->json([
+            'success' => true,
             'message' => 'Task step updated successfully.',
-            'step' => $step
+            'data' => [
+                'step' => $step,
+            ],
         ], 200);
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -238,14 +253,18 @@ class TaskStepController extends Controller
         // 3. التأكد من وجود الفريق
         if (!$team) {
             return response()->json([
-                'message' => 'The team related to this task was not found.'
+                'success' => false,
+                'message' => 'The team related to this task was not found.',
+                'data' => null,
             ], 404);
         }
 
         // 4. المدير فقط
         if ($team->admin_id !== $user->id) {
             return response()->json([
-                'message' => 'Only the team admin can reorder steps.'
+                'success' => false,
+                'message' => 'Only the team admin can reorder steps.',
+                'data' => null,
             ], 403);
         }
 
@@ -254,19 +273,19 @@ class TaskStepController extends Controller
             'steps' => [
                 'required',
                 'array',
-                'min:1'
+                'min:1',
             ],
 
             'steps.*.step_id' => [
                 'required',
                 'integer',
-                'distinct'
+                'distinct',
             ],
 
             'steps.*.step_order' => [
                 'required',
                 'integer',
-                'min:1'
+                'min:1',
             ],
         ]);
 
@@ -283,31 +302,33 @@ class TaskStepController extends Controller
 
         if ($invalid->isNotEmpty()) {
             return response()->json([
-                'message' => 'Some steps do not belong to this task.'
+                'success' => false,
+                'message' => 'Some steps do not belong to this task.',
+                'data' => null,
             ], 422);
         }
 
         // 9. تحديث الترتيب
         DB::transaction(function () use ($incoming) {
-
             foreach ($incoming as $item) {
-
                 TaskStep::where('step_id', $item['step_id'])
                     ->update([
-                        'step_order' => $item['step_order']
+                        'step_order' => $item['step_order'],
                     ]);
             }
         });
 
         // 10. إعادة الخطوات مرتبة
         return response()->json([
+            'success' => true,
             'message' => 'Task steps reordered successfully.',
-            'steps' => $task->steps()
-                ->orderBy('step_order')
-                ->get()
+            'data' => [
+                'steps' => $task->steps()
+                    ->orderBy('step_order')
+                    ->get(),
+            ],
         ], 200);
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -332,20 +353,23 @@ class TaskStepController extends Controller
         // 3. التأكد من وجود المهمة والفريق
         if (!$task || !$team) {
             return response()->json([
-                'message' => 'The task or team related to this step was not found.'
+                'success' => false,
+                'message' => 'The task or team related to this step was not found.',
+                'data' => null,
             ], 404);
         }
 
         // 4. المدير فقط
         if ($team->admin_id !== $user->id) {
             return response()->json([
-                'message' => 'Only the team admin can delete this step.'
+                'success' => false,
+                'message' => 'Only the team admin can delete this step.',
+                'data' => null,
             ], 403);
         }
 
         // 5. حذف الخطوة وسد الفراغ
         DB::transaction(function () use ($task, $step) {
-
             $order = $step->step_order;
 
             $step->delete();
@@ -357,7 +381,9 @@ class TaskStepController extends Controller
 
         // 6. رسالة النجاح
         return response()->json([
-            'message' => 'Task step deleted successfully.'
+            'success' => true,
+            'message' => 'Task step deleted successfully.',
+            'data' => null,
         ], 200);
     }
 }

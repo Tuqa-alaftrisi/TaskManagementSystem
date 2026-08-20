@@ -45,7 +45,9 @@ class StepCompletionController extends Controller
 
         if (!$task || !$project || !$team) {
             return response()->json([
-                'message' => 'The task, project, or team related to this step was not found.'
+                'success' => false,
+                'message' => 'The task, project, or team related to this step was not found.',
+                'data' => null,
             ], 404);
         }
 
@@ -57,7 +59,9 @@ class StepCompletionController extends Controller
 
         if ($task->assigned_to !== $user->id) {
             return response()->json([
-                'message' => 'Only the user assigned to this task can complete its steps.'
+                'success' => false,
+                'message' => 'Only the user assigned to this task can complete its steps.',
+                'data' => null,
             ], 403);
         }
 
@@ -74,7 +78,9 @@ class StepCompletionController extends Controller
 
         if (!$membership) {
             return response()->json([
-                'message' => 'The user is not an active member of the project team.'
+                'success' => false,
+                'message' => 'The user is not an active member of the project team.',
+                'data' => null,
             ], 403);
         }
 
@@ -86,7 +92,9 @@ class StepCompletionController extends Controller
 
         if ($task->isCancelled()) {
             return response()->json([
-                'message' => 'You cannot complete a step of a cancelled task.'
+                'success' => false,
+                'message' => 'You cannot complete a step of a cancelled task.',
+                'data' => null,
             ], 422);
         }
 
@@ -175,6 +183,7 @@ class StepCompletionController extends Controller
             | تحديث حالة المهمة تلقائيًا
             |--------------------------------------------------------------------------
             */
+
             $oldStatus = $task->status;
 
             $task->updateStatusFromProgress();
@@ -204,11 +213,14 @@ class StepCompletionController extends Controller
 
         if ($result['already_completed']) {
             return response()->json([
+                'success' => true,
                 'message' => 'This step has already been completed.',
-                'completion' => $result['completion'],
-                'points_added' => 0,
-                'progress' => $task->getProgress(),
-                'status' => $task->status,
+                'data' => [
+                    'completion' => $result['completion'],
+                    'points_added' => 0,
+                    'progress' => $task->getProgress(),
+                    'status' => $task->status,
+                ],
             ], 200);
         }
 
@@ -251,15 +263,17 @@ class StepCompletionController extends Controller
         */
 
         return response()->json([
+            'success' => true,
             'message' => 'Step completed successfully.',
-            'completion' => $result['completion'],
-            'points_added' => $result['points_added'],
-            'total_team_points' => $membership->fresh()->points_earned,
-            'progress' => $task->getProgress(),
-            'status' => $task->status,
+            'data' => [
+                'completion' => $result['completion'],
+                'points_added' => $result['points_added'],
+                'total_team_points' => $membership->fresh()->points_earned,
+                'progress' => $task->getProgress(),
+                'status' => $task->status,
+            ],
         ], 200);
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -294,7 +308,9 @@ class StepCompletionController extends Controller
 
         if (!$task || !$project || !$team) {
             return response()->json([
-                'message' => 'The task, project, or team related to this step was not found.'
+                'success' => false,
+                'message' => 'The task, project, or team related to this step was not found.',
+                'data' => null,
             ], 404);
         }
 
@@ -306,7 +322,9 @@ class StepCompletionController extends Controller
 
         if ($task->assigned_to !== $user->id) {
             return response()->json([
-                'message' => 'Only the user assigned to this task can uncomplete its steps.'
+                'success' => false,
+                'message' => 'Only the user assigned to this task can uncomplete its steps.',
+                'data' => null,
             ], 403);
         }
 
@@ -323,13 +341,17 @@ class StepCompletionController extends Controller
 
         if (!$membership) {
             return response()->json([
-                'message' => 'The user is not an active member of the project team.'
+                'success' => false,
+                'message' => 'The user is not an active member of the project team.',
+                'data' => null,
             ], 403);
         }
 
         if ($task->isCancelled()) {
             return response()->json([
-                'message' => 'You cannot change step completion of a cancelled task.'
+                'success' => false,
+                'message' => 'You cannot change step completion of a cancelled task.',
+                'data' => null,
             ], 422);
         }
 
@@ -419,6 +441,7 @@ class StepCompletionController extends Controller
             | تحديث حالة المهمة تلقائيًا
             |--------------------------------------------------------------------------
             */
+
             $oldStatus = $task->status;
 
             $task->updateStatusFromProgress();
@@ -447,10 +470,13 @@ class StepCompletionController extends Controller
 
         if (!$result['was_completed']) {
             return response()->json([
+                'success' => true,
                 'message' => 'This step is not currently completed.',
-                'points_removed' => 0,
-                'progress' => $task->getProgress(),
-                'status' => $task->status,
+                'data' => [
+                    'points_removed' => 0,
+                    'progress' => $task->getProgress(),
+                    'status' => $task->status,
+                ],
             ], 200);
         }
 
@@ -477,11 +503,14 @@ class StepCompletionController extends Controller
         */
 
         return response()->json([
+            'success' => true,
             'message' => 'Step completion cancelled successfully.',
-            'points_removed' => $result['points_removed'],
-            'total_team_points' => $membership->fresh()->points_earned,
-            'progress' => $task->getProgress(),
-            'status' => $task->status,
+            'data' => [
+                'points_removed' => $result['points_removed'],
+                'total_team_points' => $membership->fresh()->points_earned,
+                'progress' => $task->getProgress(),
+                'status' => $task->status,
+            ],
         ], 200);
     }
 }

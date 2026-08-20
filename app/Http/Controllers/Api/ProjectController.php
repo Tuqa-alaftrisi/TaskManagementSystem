@@ -21,6 +21,7 @@ class ProjectController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'ليس لديك صلاحية لمشاهدة مشاريع هذا الفريق.',
+                'data' => null,
             ], 403);
         }
 
@@ -31,6 +32,7 @@ class ProjectController extends Controller
 
         return response()->json([
             'success' => true,
+            'message' => 'تم جلب مشاريع الفريق بنجاح.',
             'data' => [
                 'projects' => $projects,
             ],
@@ -46,6 +48,7 @@ class ProjectController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'يمكن لمدير هذا الفريق فقط إنشاء المشاريع.',
+                'data' => null,
             ], 403);
         }
 
@@ -119,6 +122,7 @@ class ProjectController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'المشروع غير موجود ضمن هذا الفريق.',
+                'data' => null,
             ], 404);
         }
 
@@ -126,6 +130,7 @@ class ProjectController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'ليس لديك صلاحية لمشاهدة هذا المشروع.',
+                'data' => null,
             ], 403);
         }
 
@@ -136,6 +141,7 @@ class ProjectController extends Controller
 
         return response()->json([
             'success' => true,
+            'message' => 'تم جلب المشروع بنجاح.',
             'data' => [
                 'project' => $project,
             ],
@@ -154,6 +160,7 @@ class ProjectController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'المشروع غير موجود ضمن هذا الفريق.',
+                'data' => null,
             ], 404);
         }
 
@@ -161,6 +168,7 @@ class ProjectController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'يمكن لمدير هذا الفريق فقط تعديل المشروع.',
+                'data' => null,
             ], 403);
         }
 
@@ -212,10 +220,13 @@ class ProjectController extends Controller
         if (
             $finalStartDate !== null &&
             $finalEndDate !== null &&
-            Carbon::parse($finalEndDate)->lt(Carbon::parse($finalStartDate))
+            Carbon::parse($finalEndDate)
+                ->lt(Carbon::parse($finalStartDate))
         ) {
             return response()->json([
-                'message' => 'The end date must be after or equal to the start date.',
+                'success' => false,
+                'message' => 'تاريخ نهاية المشروع يجب أن يكون بعد تاريخ البداية أو مساويًا له.',
+                'data' => null,
                 'errors' => [
                     'end_date' => [
                         'تاريخ نهاية المشروع يجب أن يكون بعد تاريخ البداية أو مساويًا له.',
@@ -252,6 +263,7 @@ class ProjectController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'المشروع غير موجود ضمن هذا الفريق.',
+                'data' => null,
             ], 404);
         }
 
@@ -259,6 +271,7 @@ class ProjectController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'يمكن لمدير هذا الفريق فقط حذف المشروع.',
+                'data' => null,
             ], 403);
         }
 
@@ -267,11 +280,12 @@ class ProjectController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'تم حذف المشروع بنجاح.',
+            'data' => null,
         ]);
     }
 
     /**
-     * التحقق أن المشروع موجود ضمن الفريق الموجود في الرابط.
+     * التحقق أن المشروع تابع للفريق الموجود في الرابط.
      */
     private function projectBelongsToTeam(
         Project $project,
@@ -281,7 +295,7 @@ class ProjectController extends Controller
     }
 
     /**
-     * مدير الفريق أو عضو فعال يستطيع مشاهدة بيانات الفريق.
+     * مدير الفريق أو العضو الفعال يستطيع مشاهدة بيانات الفريق.
      */
     private function canAccessTeam(
         Request $request,

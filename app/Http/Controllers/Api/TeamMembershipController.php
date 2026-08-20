@@ -33,6 +33,7 @@ class TeamMembershipController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'كود الانضمام غير صحيح.',
+                'data' => null,
             ], 404);
         }
 
@@ -45,6 +46,7 @@ class TeamMembershipController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'أنت منضم إلى هذا الفريق مسبقًا.',
+                'data' => null,
             ], 409);
         }
 
@@ -75,6 +77,7 @@ class TeamMembershipController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'ليس لديك صلاحية لمشاهدة أعضاء الفريق.',
+                'data' => null,
             ], 403);
         }
 
@@ -86,6 +89,7 @@ class TeamMembershipController extends Controller
 
         return response()->json([
             'success' => true,
+            'message' => 'تم جلب أعضاء الفريق بنجاح.',
             'data' => [
                 'members' => $memberships,
             ],
@@ -104,6 +108,7 @@ class TeamMembershipController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'يمكن لمدير الفريق فقط حذف الأعضاء.',
+                'data' => null,
             ], 403);
         }
 
@@ -111,6 +116,7 @@ class TeamMembershipController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'لا يمكن حذف مدير الفريق.',
+                'data' => null,
             ], 422);
         }
 
@@ -123,6 +129,7 @@ class TeamMembershipController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'المستخدم ليس عضوًا في هذا الفريق.',
+                'data' => null,
             ], 404);
         }
 
@@ -131,6 +138,7 @@ class TeamMembershipController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'تم حذف العضو من الفريق.',
+            'data' => null,
         ]);
     }
 
@@ -143,6 +151,7 @@ class TeamMembershipController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'مدير الفريق لا يستطيع مغادرة فريقه.',
+                'data' => null,
             ], 422);
         }
 
@@ -155,6 +164,7 @@ class TeamMembershipController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'أنت لست عضوًا في هذا الفريق.',
+                'data' => null,
             ], 404);
         }
 
@@ -163,6 +173,7 @@ class TeamMembershipController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'تمت مغادرة الفريق بنجاح.',
+            'data' => null,
         ]);
     }
 

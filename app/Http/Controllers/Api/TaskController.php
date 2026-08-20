@@ -11,8 +11,6 @@ use App\Models\Notification;
 use Illuminate\Http\Request;
 
 class TaskController extends Controller
-
-
 {
     public function index(Request $request, $team, $project)
     {
@@ -26,14 +24,18 @@ class TaskController extends Controller
         // 3. التأكد أن الفريق والمشروع موجودان
         if (!$team || !$project) {
             return response()->json([
-                'message' => 'Team or project not found.'
+                'success' => false,
+                'message' => 'Team or project not found.',
+                'data' => null,
             ], 404);
         }
 
         // 4. التأكد أن المشروع تابع للفريق
         if ($project->team_id !== $team->id) {
             return response()->json([
-                'message' => 'The project does not belong to this team.'
+                'success' => false,
+                'message' => 'The project does not belong to this team.',
+                'data' => null,
             ], 403);
         }
 
@@ -49,7 +51,9 @@ class TaskController extends Controller
         // 7. منع أي شخص ليس مديرًا أو عضوًا فعالًا
         if (!$isAdmin && !$isMember) {
             return response()->json([
-                'message' => 'You do not have permission to view project tasks.'
+                'success' => false,
+                'message' => 'You do not have permission to view project tasks.',
+                'data' => null,
             ], 403);
         }
 
@@ -68,8 +72,11 @@ class TaskController extends Controller
 
         // 11. إرجاع المهام
         return response()->json([
+            'success' => true,
             'message' => 'Project tasks retrieved successfully.',
-            'tasks' => $tasks
+            'data' => [
+                'tasks' => $tasks,
+            ],
         ], 200);
     }
 
@@ -89,7 +96,9 @@ class TaskController extends Controller
         // 3. التأكد أن المستخدم الحالي مدير
         if (!$user || !$user->isAdmin()) {
             return response()->json([
-                'message' => 'Unauthorized. Only admins can create tasks.'
+                'success' => false,
+                'message' => 'Unauthorized. Only admins can create tasks.',
+                'data' => null,
             ], 403);
         }
 
@@ -100,25 +109,31 @@ class TaskController extends Controller
         // 5. التأكد أن الفريق والمشروع موجودان
         if (!$team || !$project) {
             return response()->json([
-                'message' => 'Team or project not found.'
+                'success' => false,
+                'message' => 'Team or project not found.',
+                'data' => null,
             ], 404);
         }
 
         // 6. التأكد أن المشروع تابع لهذا الفريق
         if ($project->team_id !== $team->id) {
             return response()->json([
-                'message' => 'The project does not belong to this team.'
+                'success' => false,
+                'message' => 'The project does not belong to this team.',
+                'data' => null,
             ], 403);
         }
 
         // 7. التأكد أن المدير الحالي هو مدير الفريق
         if ($team->admin_id !== $user->id) {
             return response()->json([
-                'message' => 'You do not have permission to create a task in this project.'
+                'success' => false,
+                'message' => 'You do not have permission to create a task in this project.',
+                'data' => null,
             ], 403);
         }
 
-        //6. التأكد أن المستخدم المكلف عضو فعال في فريق المشروع
+        // 8. التأكد أن المستخدم المكلف عضو فعال في فريق المشروع
         $membership = TeamMembership::where('team_id', $project->team_id)
             ->where('user_id', $validated['assigned_to'])
             ->where('status', 'active')
@@ -126,11 +141,13 @@ class TaskController extends Controller
 
         if (!$membership) {
             return response()->json([
-                'message' => 'The assigned user is not an active member of the project team.'
+                'success' => false,
+                'message' => 'The assigned user is not an active member of the project team.',
+                'data' => null,
             ], 422);
         }
 
-        // 7. إنشاء المهمة
+        // 9. إنشاء المهمة
         $task = Task::create([
             'project_id' => $project->id,
             'assigned_to' => $validated['assigned_to'],
@@ -154,10 +171,13 @@ class TaskController extends Controller
             ]
         );
 
-        // 8. إرجاع المهمة التي تم إنشاؤها
+        // 10. إرجاع المهمة التي تم إنشاؤها
         return response()->json([
+            'success' => true,
             'message' => 'Task created successfully.',
-            'task' => $task
+            'data' => [
+                'task' => $task,
+            ],
         ], 201);
     }
 
@@ -171,18 +191,21 @@ class TaskController extends Controller
             'project.team',
             'assignedUser',
             'creator',
-            'steps'
+            'steps',
         ])->find($task);
 
         // 3. التأكد أن المهمة موجودة
         if (!$task) {
             return response()->json([
-                'message' => 'Task not found.'
+                'success' => false,
+                'message' => 'Task not found.',
+                'data' => null,
             ], 404);
         }
 
         // 4. الحصول على الفريق المرتبط بالمهمة
         $team = $task->project->team;
+
         // 5. التأكد من صلاحية المستخدم
 
         // هل المستخدم مدير الفريق؟
@@ -194,16 +217,22 @@ class TaskController extends Controller
         // السماح فقط للمدير أو المستخدم المسؤول عن المهمة
         if (!$isAdmin && !$isAssignedUser) {
             return response()->json([
-                'message' => 'You do not have permission to view this task.'
+                'success' => false,
+                'message' => 'You do not have permission to view this task.',
+                'data' => null,
             ], 403);
         }
 
-        // 7. إرجاع تفاصيل المهمة
+        // 6. إرجاع تفاصيل المهمة
         return response()->json([
+            'success' => true,
             'message' => 'Task retrieved successfully.',
-            'task' => $task
+            'data' => [
+                'task' => $task,
+            ],
         ], 200);
     }
+
     public function update(Request $request, Task $task)
     {
         // 1. المستخدم الحالي
@@ -218,48 +247,50 @@ class TaskController extends Controller
         // 3. التأكد أن المشروع والفريق موجودان
         if (!$project || !$team) {
             return response()->json([
-                'message' => 'The project or team related to this task was not found.'
+                'success' => false,
+                'message' => 'The project or team related to this task was not found.',
+                'data' => null,
             ], 404);
         }
 
         // 4. التأكد أن المستخدم هو مدير الفريق
         if ($team->admin_id !== $user->id) {
             return response()->json([
-                'message' => 'Only the team admin can update task details.'
+                'success' => false,
+                'message' => 'Only the team admin can update task details.',
+                'data' => null,
             ], 403);
         }
 
         // 5. التحقق من بيانات التعديل
         $validated = $request->validate([
-
             'assigned_to' => [
                 'sometimes',
                 'integer',
-                'exists:users,id'
+                'exists:users,id',
             ],
 
             'title' => [
                 'sometimes',
                 'string',
-                'max:255'
+                'max:255',
             ],
 
             'description' => [
                 'sometimes',
                 'nullable',
-                'string'
+                'string',
             ],
 
             'deadline' => [
                 'sometimes',
                 'date',
-                'after:now'
+                'after:now',
             ],
         ]);
 
         // 6. إذا قام المدير بتغيير الشخص المسؤول
         if (isset($validated['assigned_to'])) {
-
             $membership = TeamMembership::where('team_id', $team->id)
                 ->where('user_id', $validated['assigned_to'])
                 ->where('status', 'active')
@@ -267,11 +298,15 @@ class TaskController extends Controller
 
             if (!$membership) {
                 return response()->json([
-                    'message' => 'The assigned user is not an active member of the project team.'
+                    'success' => false,
+                    'message' => 'The assigned user is not an active member of the project team.',
+                    'data' => null,
                 ], 422);
             }
         }
+
         $oldAssignedTo = $task->assigned_to;
+
         // 7. تحديث تفاصيل المهمة
         $task->update($validated);
 
@@ -298,15 +333,19 @@ class TaskController extends Controller
             'project',
             'assignedUser',
             'creator',
-            'steps'
+            'steps',
         ]);
 
         // 9. إرجاع المهمة بعد التعديل
         return response()->json([
+            'success' => true,
             'message' => 'Task updated successfully.',
-            'task' => $task
+            'data' => [
+                'task' => $task,
+            ],
         ], 200);
     }
+
     public function cancel(Request $request, Task $task)
     {
         // 1. المستخدم الحالي
@@ -321,28 +360,36 @@ class TaskController extends Controller
         // 3. التأكد أن المشروع والفريق موجودان
         if (!$project || !$team) {
             return response()->json([
-                'message' => 'The project or team related to this task was not found.'
+                'success' => false,
+                'message' => 'The project or team related to this task was not found.',
+                'data' => null,
             ], 404);
         }
 
         // 4. التأكد أن المستخدم هو مدير الفريق
         if ($team->admin_id !== $user->id) {
             return response()->json([
-                'message' => 'Only the team admin can cancel this task.'
+                'success' => false,
+                'message' => 'Only the team admin can cancel this task.',
+                'data' => null,
             ], 403);
         }
 
         // 5. منع إلغاء مهمة مكتملة
         if ($task->isCompleted()) {
             return response()->json([
-                'message' => 'A completed task cannot be cancelled.'
+                'success' => false,
+                'message' => 'A completed task cannot be cancelled.',
+                'data' => null,
             ], 422);
         }
 
         // 6. منع إلغاء مهمة ملغاة مسبقًا
         if ($task->isCancelled()) {
             return response()->json([
-                'message' => 'The task is already cancelled.'
+                'success' => false,
+                'message' => 'The task is already cancelled.',
+                'data' => null,
             ], 422);
         }
 
@@ -368,13 +415,16 @@ class TaskController extends Controller
             'project',
             'assignedUser',
             'creator',
-            'steps'
+            'steps',
         ]);
 
         // 9. إرجاع النتيجة
         return response()->json([
+            'success' => true,
             'message' => 'Task cancelled successfully.',
-            'task' => $task
+            'data' => [
+                'task' => $task,
+            ],
         ], 200);
     }
 
@@ -392,14 +442,18 @@ class TaskController extends Controller
         // 3. التأكد أن المشروع والفريق موجودان
         if (!$project || !$team) {
             return response()->json([
-                'message' => 'The project or team related to this task was not found.'
+                'success' => false,
+                'message' => 'The project or team related to this task was not found.',
+                'data' => null,
             ], 404);
         }
 
         // 4. التأكد أن المستخدم هو مدير هذا الفريق
         if ($team->admin_id !== $user->id) {
             return response()->json([
-                'message' => 'You do not have permission to delete this task.'
+                'success' => false,
+                'message' => 'You do not have permission to delete this task.',
+                'data' => null,
             ], 403);
         }
 
@@ -408,9 +462,12 @@ class TaskController extends Controller
 
         // 6. إرجاع رسالة نجاح
         return response()->json([
-            'message' => 'Task deleted successfully.'
+            'success' => true,
+            'message' => 'Task deleted successfully.',
+            'data' => null,
         ], 200);
     }
+
     public function myTasks(Request $request)
     {
         // 1. المستخدم الحالي
@@ -420,17 +477,21 @@ class TaskController extends Controller
         $tasks = Task::where('assigned_to', $user->id)
             ->with([
                 'project',
-                'creator'
+                'creator',
             ])
             ->latest()
             ->get();
 
         // 3. إرجاع المهام
         return response()->json([
+            'success' => true,
             'message' => 'Your assigned tasks retrieved successfully.',
-            'tasks' => $tasks
+            'data' => [
+                'tasks' => $tasks,
+            ],
         ], 200);
     }
+
     public function checkDeadline(Task $task)
     {
         // 1. تحميل المشروع والفريق المرتبطين بالمهمة
@@ -442,7 +503,9 @@ class TaskController extends Controller
         // 2. التأكد أن المشروع والفريق موجودان
         if (!$project || !$team) {
             return response()->json([
-                'message' => 'The project or team related to this task was not found.'
+                'success' => false,
+                'message' => 'The project or team related to this task was not found.',
+                'data' => null,
             ], 404);
         }
 
@@ -458,7 +521,9 @@ class TaskController extends Controller
         // 6. السماح فقط للمدير أو المسؤول عن المهمة
         if (!$isAdmin && !$isAssignedUser) {
             return response()->json([
-                'message' => 'You do not have permission to view this task deadline.'
+                'success' => false,
+                'message' => 'You do not have permission to view this task deadline.',
+                'data' => null,
             ], 403);
         }
 
@@ -469,10 +534,13 @@ class TaskController extends Controller
 
         // 8. إرجاع النتيجة
         return response()->json([
+            'success' => true,
             'message' => 'Task deadline checked successfully.',
-            'task_id' => $task->task_id,
-            'deadline' => $task->deadline,
-            'is_overdue' => $isOverdue,
+            'data' => [
+                'task_id' => $task->task_id,
+                'deadline' => $task->deadline,
+                'is_overdue' => $isOverdue,
+            ],
         ], 200);
     }
 }

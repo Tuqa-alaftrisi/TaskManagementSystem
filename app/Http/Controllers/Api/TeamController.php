@@ -39,6 +39,7 @@ class TeamController extends Controller
 
         return response()->json([
             'success' => true,
+            'message' => 'تم جلب الفرق بنجاح.',
             'data' => [
                 'teams' => $teams,
             ],
@@ -98,6 +99,7 @@ class TeamController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'ليس لديك صلاحية لمشاهدة هذا الفريق.',
+                'data' => null,
             ], 403);
         }
 
@@ -118,6 +120,7 @@ class TeamController extends Controller
 
         return response()->json([
             'success' => true,
+            'message' => 'تم جلب بيانات الفريق بنجاح.',
             'data' => [
                 'team' => $team,
             ],
@@ -133,6 +136,7 @@ class TeamController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'يمكن لمدير هذا الفريق فقط تعديله.',
+                'data' => null,
             ], 403);
         }
 
@@ -166,6 +170,7 @@ class TeamController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'يمكن لمدير هذا الفريق فقط حذفه.',
+                'data' => null,
             ], 403);
         }
 
@@ -174,6 +179,7 @@ class TeamController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'تم حذف الفريق بنجاح.',
+            'data' => null,
         ]);
     }
 
